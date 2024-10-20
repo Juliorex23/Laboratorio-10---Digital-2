@@ -1,0 +1,39 @@
+//Universidad del Valle de Guatemala
+//Julio Pérez 221023
+//Electrónica Digital 2
+//Comunicación SPI entre ESP32 y núcleo STM32 para poder enviar la lectura de ADC del ESP al presionar un botón en el núcleo. 
+#include <Arduino.h>
+
+#define ADC_PIN 34 // Pin ADC para el potenciómetro
+
+void setup() {
+    Serial.begin(115200); // Serial para mostrar en el monitor los datos enviados al STM32
+    Serial2.begin(115200); // UART para comunicación con STM32
+    pinMode(ADC_PIN, INPUT);
+}
+
+void loop() {
+    if (Serial2.available() > 0) {
+        uint8_t request = Serial2.read();
+        // Imprimir que se recibió el request del botón del STM32
+        Serial.print("Request recibido: ");
+        Serial.println(request);
+
+        if (request == 1) {
+            // Leer valor del ADC
+            uint16_t adcValue = analogRead(ADC_PIN);
+            uint16_t response = adcValue;
+            float voltaje = adcValue * (5.0 / 4095.0);
+            uint16_t responsef = map(voltaje,0.0,5.0, 0, 255); //Mapeo de 0 a 255 del valor del adc para poder enviar solo un byte al ESP
+
+            Serial2.write(responsef);  // Enviar la respuesta al STM32
+            Serial.print("Response enviado: ");
+            Serial.println(responsef);
+            Serial.print("Voltaje medido: ");
+            Serial.print(voltaje);
+            Serial.println(" V"); // Ahora está en la misma línea
+            
+            delay(10); // Retardo para evitar problemas de comunicación
+        }
+    }
+}
